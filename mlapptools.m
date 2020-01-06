@@ -733,8 +733,15 @@ classdef (Abstract) mlapptools
         ID = hWin.executeJS(widgetquerystr);
         widgetID = WidgetID(mlapptools.DEF_ID_ATTRIBUTE, ID(2:end-1));
       catch % fallback for problematic objects
+      widgetquerystr = sprintf(...
+        'dojo.getAttr(dojo.query("[data-tag^=''%s'']")[0], "widgetid")', dataTag);
+      try % should work for most UI objects
+        ID = hWin.executeJS(widgetquerystr);
+        widgetID = WidgetID(mlapptools.DEF_ID_ATTRIBUTE, ID(2:end-1));
+      catch
         warning('This widget is unsupported.');
         % widgetID = mlapptools.getWidgetIDFromDijit(hWin, data_tag);
+      end
       end
     end % getWidgetID
     
@@ -893,9 +900,12 @@ classdef (Abstract) mlapptools
               to = mlapptools.getTimeout([]);
             end
       tic
-      while (toc < to) && ~jsondecode(hWin.executeJS(...
-          'this.hasOwnProperty("require") && require !== undefined && typeof(require) === "function"'))
-        pause(0.01)
+      try
+          while (toc < to) && ~jsondecode(hWin.executeJS(...
+                  'this.hasOwnProperty("require") && require !== undefined && typeof(require) === "function"'))
+              pause(0.01)
+          end
+      catch
       end
       if toc > to
         msgID = 'mlapptools:waitTillWebwindowLoaded:TimeoutReached';
